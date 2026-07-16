@@ -31,7 +31,7 @@ st.set_page_config(
 
 def load_data():
     
-    df = pd.read_csv(r"All Laps - 5 June 2026.csv")
+    df = pd.read_csv('All Laps - 5 June 2026.csv')
     
     df['interval_data'] = df['interval_data'].apply(
         lambda x : json.loads(x) if pd.notnull(x) else [])
