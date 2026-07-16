@@ -1,0 +1,24 @@
+Lap Times & Performance
+Driver Lap Time Comparison Comparison of the best lap times achieved by each driver
+Lap Time Evolution --> Do drivers consistently improve their times lap after lap?
+Driver Consistency --> Analysis The delta between each driver's best and worst laps to measure consistency
+Final Driver Ranking Score --> A composite score ranking drivers based on top speed, best lap time, and consistency
+
+Speed Analysis
+Top and Minimum Speed Per Driver --> Analysis of the maximum and minimum speeds reached by each driver
+Speed Distribution Per Driver --> How often do drivers sustain specific speed ranges (e.g., 100, 200, 300 km/h)?
+Average Speed Per Gear --> In which gear do drivers achieve the highest average speed?
+
+Throttle & Brake (Driving Style)
+Throttle Open Percentage --> Percentage of lap time spent with the throttle engaged (throttle > 0)
+Braking Percentage --> Percentage of lap time spent braking (brake == 1)
+Driving Style Comparison --> Who brakes later? Who accelerates earlier? (Analyzing brake vs throttle telemetry over time)
+
+RPM & Gear Telemetry
+High RPM vs. High Throttle Correlation --> Analyzing the relationship between peak RPM and full throttle
+Average RPM Per Driver --> Who pushes the engine the hardest? (Highest average RPM)
+RPM Distribution Per Gear --> How do RPM ranges shift across different gears?
+
+Cross-Variable Interactions & Mapping
+Telemetry Correlation Heatmap --> A correlation matrix of all numerical variables (speed, RPM, throttle, brake, gear)
+Single-Lap Telemetry Profile --> A second-by-second visualization of speed, RPM, and throttle during the fastest lap
