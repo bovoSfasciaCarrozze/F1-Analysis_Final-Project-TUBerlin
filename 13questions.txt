@@ -15,10 +15,8 @@ Braking Percentage --> Percentage of lap time spent braking (brake == 1)
 Driving Style Comparison --> Who brakes later? Who accelerates earlier? (Analyzing brake vs throttle telemetry over time)
 
 RPM & Gear Telemetry
-High RPM vs. High Throttle Correlation --> Analyzing the relationship between peak RPM and full throttle
 Average RPM Per Driver --> Who pushes the engine the hardest? (Highest average RPM)
 RPM Distribution Per Gear --> How do RPM ranges shift across different gears?
 
 Cross-Variable Interactions & Mapping
-Telemetry Correlation Heatmap --> A correlation matrix of all numerical variables (speed, RPM, throttle, brake, gear)
 Single-Lap Telemetry Profile --> A second-by-second visualization of speed, RPM, and throttle during the fastest lap
