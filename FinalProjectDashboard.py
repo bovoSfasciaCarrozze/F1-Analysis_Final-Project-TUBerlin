@@ -31,7 +31,7 @@ st.set_page_config(
 
 def load_data():
     
-    df = pd.read_csv('All Laps - 5 June 2026.csv')
+    df = pd.read_csv(r"C:\Users\ebebo\Desktop\TUcourseMaterial\Final project\archive\All Laps - 5 June 2026.csv")
     
     df['interval_data'] = df['interval_data'].apply(
         lambda x : json.loads(x) if pd.notnull(x) else [])
@@ -77,7 +77,7 @@ st.divider()
 
 # side bar with filters
 with st.sidebar:
-    st.header("🔧 Filtri")
+    st.header("🔧 Filters")
     
     all_drivers = sorted(final_df['driver_code'].unique().tolist())
     
@@ -85,6 +85,14 @@ with st.sidebar:
         "Seleziona piloti:",
         options=all_drivers,
         default=all_drivers[:5]
+    )
+    
+    st.divider()
+
+    selected_single = st.selectbox(
+    "🔍 Select a single driver (for Q6 Speed Distribution & Q10 Driving Style):",
+    options=all_drivers,
+    index=0
     )
     
     st.divider()
@@ -109,10 +117,12 @@ best_laps = (df.groupby('driver_code')['lap_time_sec_total']
                .sort_values('best_lap_time')
                .reset_index(drop=True))
 
-# Q2 — Lap time evolution
-lap_evolution = (df.groupby(['driver_code', 'lap_number'])['lap_time_sec_total']
-                   .first()
-                   .reset_index())
+# Q2
+lap_evo_stats = (df[df['lap_time_sec_total'] < 200]
+                 .groupby(['driver_code', 'lap_number'])['lap_time_sec_total']
+                 .agg(mean_time='mean', std_time='std', n='count')
+                 .reset_index())
+lap_evo_stats['ci'] = 1.96 * (lap_evo_stats['std_time'] / np.sqrt(lap_evo_stats['n']))
 
 # Q3 — Driver consistency (solo giri < 200s)
 consistency = (df[df['lap_time_sec_total'] < 200]
@@ -273,23 +283,27 @@ with col2:
         - Error bars = 95% Confidence Interval
         """)
 
-fig2 = px.line(
-    data_frame=lap_evolution,
-    x='lap_number', y='lap_time_sec_total',
-    color='driver_code', markers=True,
+fig2 = px.bar(
+    data_frame=lap_evo_stats,
+    x='lap_number', y='mean_time',
+    error_y='ci',
+    color='driver_code',
+    barmode='group',
     title='(2) Lap Time Evolution',
-    labels={'lap_time_sec_total': 'Lap Time (s)',
-            'lap_number': 'Lap Number', 'driver_code': 'Driver'})
-fig2.update_layout(title_font=dict(size=16, weight='bold'),
-                   xaxis=dict(tickmode='linear', dtick=1))
-fig2.update_traces(marker_size=6)
+    labels={'mean_time': 'Mean Lap Time (s)',
+            'lap_number': 'Lap Number',
+            'driver_code': 'Driver'})
+fig2.update_layout(
+    title_font=dict(size=16, weight='bold'),
+    xaxis=dict(tickmode='linear', dtick=1))
 st.plotly_chart(fig2, use_container_width=True)
 with st.expander("Interpretation"):
     st.write("""
-    How each driver's lap time evolved over successive laps.
-    - Downward trend = driver improving ✅
-    - Spikes upward = slow laps (out laps, traffic, pit laps)
-    - Click on a driver in the legend to hide/show their line
+    Mean lap time per lap number for each driver with 95% CI.
+    - Each bar = mean lap time for that lap
+    - Error bars = 95% Confidence Interval
+    - Bars going down = driver improving lap after lap
+    - Large CI = high variability in that lap across drivers
     """)
 
 fig4 = px.scatter(
@@ -358,26 +372,21 @@ with col1:
         """)
 
 with col2:
+    # Q6 — filtra per il singolo pilota
+    speed_dist_single = speed_dist[speed_dist['driver_code'] == selected_single]
+
     fig6 = px.sunburst(
-        data_frame=speed_dist,
+        data_frame=speed_dist_single,
         path=['driver_code', 'speed_range'],
         values='seconds', color='speed_range',
         color_discrete_map={'0-100': '#636EFA', '100-200': '#EF553B',
-                            '200-300': '#00CC96', '300+': '#FFA15A'},
-        title='(6) Speed Distribution Per Driver')
+                        '200-300': '#00CC96', '300+': '#FFA15A'},
+        title=f'(6) Speed Distribution — {selected_single}')
     fig6.update_layout(title_font=dict(size=16, weight='bold'))
     fig6.update_traces(hovertemplate=(
         "<b>%{label}</b><br>Seconds: %{value}<br>"
         "Share of total: %{percentRoot:.1%}<extra></extra>"))
     st.plotly_chart(fig6, use_container_width=True)
-    with st.expander("Interpretation"):
-        st.write("""
-        Time spent by each driver in each speed range.
-        - Inner ring = driver | Outer ring = speed ranges
-        - Larger segment = more time in that speed range
-        - Click a segment to zoom into a specific driver
-        - 🔵 0-100 | 🔴 100-200 | 🟢 200-300 | 🟠 300+ km/h
-        """)
 
 st.divider()
 
@@ -427,24 +436,24 @@ with col2:
         - Low throttle + High brake = cautious or many slow laps 🔴
         """)
 
-    fig10 = px.line(
-        data_frame=driving_style_long,
-        x='t', y='value', color='metric',
-        facet_col='driver_code', facet_col_wrap=3,
-        title='(10) Driving Style Comparison — Throttle & Brake on Fastest Lap',
-        labels={'t': 'Time (s)', 'value': 'Value', 'metric': 'Metric'})
-    fig10.update_layout(title_font=dict(size=16, weight='bold'))
-    fig10.for_each_annotation(lambda a: a.update(text=a.text.split('=')[-1]))
-    st.plotly_chart(fig10, use_container_width=True)
-    with st.expander("Interpretation"):
-        st.write("""
-            Second-by-second throttle and brake profile on each driver's fastest lap.
-            - 🔵 Throttle — gas pedal input (0-100%)
-            - 🔴 Brake — braking input (0 = no brake, 1 = braking)
-            - Throttle drops + Brake rises → braking zone
-            - Throttle rises + Brake drops → acceleration zone
-            - Click legend to show/hide throttle or brake
-            """)
+# Q10 — filtra per il singolo pilota
+driving_style_single = driving_style_long[
+    driving_style_long['driver_code'] == selected_single]
+
+fig10 = px.line(
+    data_frame=driving_style_single,
+    x='t', y='value', color='metric',
+    title=f'(10) Driving Style — {selected_single} Fastest Lap',
+    labels={'t': 'Time (s)', 'value': 'Value', 'metric': 'Metric'})
+fig10.update_layout(title_font=dict(size=16, weight='bold'))
+st.plotly_chart(fig10, use_container_width=True)
+with st.expander("📖 How to read this chart"):
+    st.write("""
+             Second-by-second throttle and brake profile on the selected driver's fastest lap.
+             - 🔵 Throttle — gas pedal input (0-100%)
+             - 🔴 Brake — braking input (0 = no brake, 1 = braking)
+             - Use the sidebar filter to switch between drivers
+             """)
 
 st.divider()
 
@@ -494,75 +503,37 @@ with col2:
         - Overlap between gears = typical RPM range for gear changes
         """)
 
-    fig11 = px.scatter(
-        data_frame=rpm_vs_throttle,
-        x='throttle', y='rpm', color='driver_code', opacity=0.4,
-        title='(11) High RPM vs High Throttle Correlation',
-        labels={'throttle': 'Throttle (%)', 'rpm': 'RPM', 'driver_code': 'Driver'})
-    fig11.update_layout(title_font=dict(size=16, weight='bold'))
-    st.plotly_chart(fig11, use_container_width=True)
-    with st.expander("Interpretation"):
-        st.write("""
-                 Relationship between RPM and throttle across 145,000+ data points.
-                 - Each point = one second of driving data
-                 - Diagonal pattern = positive correlation: more throttle = higher RPM ✅
-                 - Bottom-right (high throttle, low RPM) = gear changes
-                 - Top-left (low throttle, high RPM) = engine braking
-                 - Opacity 0.4 to better show density of points
-                 """)
 
 st.divider()
 
 # ── SEZIONE 5 — CROSS-VARIABLE ────────────────────────────────
-st.header("🔬 Group 5 — Cross-Variable Interactions")
+st.header("🔬 Group 5 — Single-Lap Telemetry Pro")
 
 col1, col2 = st.columns([1, 2])
 
-with col1:
-    fig14 = px.imshow(
-        corr_matrix, text_auto=True,
-        color_continuous_scale='RdBu',
-        color_continuous_midpoint=0,
-        title='(14) Telemetry Correlation Heatmap')
-    fig14.update_layout(title_font=dict(size=16, weight='bold'))
-    st.plotly_chart(fig14, use_container_width=True)
-    with st.expander("Interpretation"):
-        st.write("""
-        Correlation matrix between all key telemetry variables.
-        - 🔵 Blue (+1) = strong positive correlation
-        - ⚪ White (0) = no relationship
-        - 🔴 Red (-1) = strong negative correlation
 
-        Expected patterns:
-        - Speed & Gear → positive ✅
-        - Speed & RPM → positive ✅
-        - Brake & Throttle → negative ✅
-        - Lap time & Speed → negative ✅
-        """)
+fig15 = px.line(
+    data_frame=telemetry_long,
+    x='t', y='value', color='metric',
+    facet_col='driver_code', facet_col_wrap=3,
+    title='(15) Single-Lap Telemetry Profile — Fastest Lap Per Driver',
+    labels={'t': 'Time (s)', 'value': 'Normalised Value (0-1)', 'metric': 'Metric'})
+fig15.update_layout(title_font=dict(size=16, weight='bold'))
+fig15.for_each_annotation(lambda a: a.update(text=a.text.split('=')[-1]))
+st.plotly_chart(fig15, use_container_width=True)
+with st.expander("Interpretation"):
+    st.write("""
+    Second-by-second telemetry on each driver's fastest lap.
+    All metrics normalised 0-1 to be comparable on the same scale.
+    - 🔵 speed_norm → normalised speed
+    - 🟠 rpm_norm → normalised RPM
+    - 🟢 throttle_norm → normalised throttle
 
-with col2:
-    fig15 = px.line(
-        data_frame=telemetry_long,
-        x='t', y='value', color='metric',
-        facet_col='driver_code', facet_col_wrap=3,
-        title='(15) Single-Lap Telemetry Profile — Fastest Lap Per Driver',
-        labels={'t': 'Time (s)', 'value': 'Normalised Value (0-1)', 'metric': 'Metric'})
-    fig15.update_layout(title_font=dict(size=16, weight='bold'))
-    fig15.for_each_annotation(lambda a: a.update(text=a.text.split('=')[-1]))
-    st.plotly_chart(fig15, use_container_width=True)
-    with st.expander("Interpretation"):
-        st.write("""
-        Second-by-second telemetry on each driver's fastest lap.
-        All metrics normalised 0-1 to be comparable on the same scale.
-        - 🔵 speed_norm → normalised speed
-        - 🟠 rpm_norm → normalised RPM
-        - 🟢 throttle_norm → normalised throttle
-
-        What to look for:
-        - Speed drops → corner entry (braking zone)
-        - Throttle rises → corner exit (acceleration)
-        - Differences between drivers = different driving styles
-        """)
+    What to look for:
+    - Speed drops → corner entry (braking zone)
+    - Throttle rises → corner exit (acceleration)
+    - Differences between drivers = different driving styles
+    """)
 
 st.divider()
 st.caption("Francesco Bovina — Data Analysis and Visualization with Python — TU Berlin 2026")
