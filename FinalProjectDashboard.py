@@ -31,7 +31,7 @@ st.set_page_config(
 
 def load_data():
     
-    df = pd.read_csv('All Laps - 5 June 2026.csv')
+    df = pd.read_csv(r"C:\Users\ebebo\Desktop\TUcourseMaterial\Final project\archive\All Laps - 5 June 2026.csv")
     
     df['interval_data'] = df['interval_data'].apply(
         lambda x : json.loads(x) if pd.notnull(x) else [])
@@ -82,7 +82,7 @@ with st.sidebar:
     all_drivers = sorted(final_df['driver_code'].unique().tolist())
     
     selected_drivers = st.multiselect(
-        "Seleziona piloti:",
+        "Select drivers:",
         options=all_drivers,
         default=all_drivers[:5]
     )
@@ -90,7 +90,7 @@ with st.sidebar:
     st.divider()
 
     selected_single = st.selectbox(
-    "🔍 Select a single driver (for Q6 Speed Distribution & Q10 Driving Style):",
+    "Select a single driver (for Q6 Speed Distribution & Q10 Driving Style):",
     options=all_drivers,
     index=0
     )
@@ -288,14 +288,16 @@ fig2 = px.bar(
     x='lap_number', y='mean_time',
     error_y='ci',
     color='driver_code',
-    barmode='group',
-    title='(2) Lap Time Evolution',
+    facet_col='driver_code',   # ← un pannello per ogni pilota
+    facet_col_wrap=3,          # ← 3 pannelli per riga
+    title='(2) Lap Time Evolution — Mean & 95% CI per Driver',
     labels={'mean_time': 'Mean Lap Time (s)',
             'lap_number': 'Lap Number',
             'driver_code': 'Driver'})
 fig2.update_layout(
     title_font=dict(size=16, weight='bold'),
-    xaxis=dict(tickmode='linear', dtick=1))
+    xaxis=dict(tickmode='linear', dtick=5)) 
+fig2.for_each_annotation(lambda a: a.update(text=a.text.split('=')[-1]))
 st.plotly_chart(fig2, use_container_width=True)
 with st.expander("Interpretation"):
     st.write("""
@@ -447,7 +449,7 @@ fig10 = px.line(
     labels={'t': 'Time (s)', 'value': 'Value', 'metric': 'Metric'})
 fig10.update_layout(title_font=dict(size=16, weight='bold'))
 st.plotly_chart(fig10, use_container_width=True)
-with st.expander("📖 How to read this chart"):
+with st.expander("Interpretation"):
     st.write("""
              Second-by-second throttle and brake profile on the selected driver's fastest lap.
              - 🔵 Throttle — gas pedal input (0-100%)
