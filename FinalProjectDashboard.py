@@ -466,7 +466,7 @@ with col1:
     fig12 = px.bar(
         data_frame=avg_rpm,
         x='avg_rpm', y='driver_code', orientation='h',
-        title='(12) Average RPM Per Driver',
+        title='(11) Average RPM Per Driver',
         labels={'avg_rpm': 'Average RPM', 'driver_code': ''},
         color='avg_rpm',
         color_continuous_scale=px.colors.sequential.Oranges)
@@ -487,7 +487,7 @@ with col2:
     fig13 = px.box(
         data_frame=rpm_distribution_perGear,
         x='gear', y='rpm', color='gear',
-        title='(13) RPM Distribution Per Gear',
+        title='(12) RPM Distribution Per Gear',
         labels={'gear': 'Gear', 'rpm': 'RPM'})
     fig13.update_layout(title_font=dict(size=16, weight='bold'),
                         showlegend=False,
@@ -516,7 +516,7 @@ fig15 = px.line(
     data_frame=telemetry_long,
     x='t', y='value', color='metric',
     facet_col='driver_code', facet_col_wrap=3,
-    title='(15) Single-Lap Telemetry Profile — Fastest Lap Per Driver',
+    title='(13) Single-Lap Telemetry Profile — Fastest Lap Per Driver',
     labels={'t': 'Time (s)', 'value': 'Normalised Value (0-1)', 'metric': 'Metric'})
 fig15.update_layout(title_font=dict(size=16, weight='bold'))
 fig15.for_each_annotation(lambda a: a.update(text=a.text.split('=')[-1]))
